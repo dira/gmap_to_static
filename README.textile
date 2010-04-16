@@ -1,0 +1,3 @@
+A bookmarklet that allows to get a static map out of a dynamic Google map, together with its markers, with just a click.
+
+!http://img.skitch.com/20100415-c3be1mse6stb3krhtqya4erh88.jpg!
