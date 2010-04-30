@@ -1,20 +1,8 @@
-function is_function(elem) {
-  return (typeof(elem) == 'function');
-}
-
 function is_object(elem) {
   return (elem != null) && (typeof(elem) == 'object');
 }
 
-function is_array(elem) {
-  return !(typeof(elem.length) == 'undefined');
-}
-
-map = window['gApplication'].getMap();
-signature = "dira-was-here";
-
 function has_property(container, property) {
-  //console.log(container, property);
   return (typeof(container[property]) != 'undefined');
 }
 
@@ -22,13 +10,16 @@ function is_marker(container) {
   return has_property(container, 'infoWindow');
 }
 
-function explore(container, level) {
-  //console.log(container);
+map = window['gApplication'].getMap();
+signature = 'dira-was-here';
+max_level = 4;
+
+function explore(container, history) {
   if (is_marker(container)) {
-    console.log("found it!!!!!!!", container);
-    throw("found it");
+    throw(history);
   }
-  if (level > 4) return;
+  level = history.length;
+  if (level > max_level) return;
 
   try { 
     container[signature] = 1;
@@ -39,15 +30,64 @@ function explore(container, level) {
     if (!is_object(container[property])) continue;
     if (has_property(container[property], signature)) continue;
 
-    //s = property;
-    //for (i = 0; i < level; i++) s = "\t" + s;
-    //console.log(s);
-    explore(container[property], level + 1);
+    explore(container[property], history.concat([property]));
   }
 }
 
-explore(map, 1);
+markers = [];
+try {
+  explore(map, []);
+} catch(stack) {
+  // stack has the form property property 0 property property
+  // before the index is the markers' container, after the index the properties to access inside the marker
+  container = map;
+  for (i = 0; i < stack.length; i++) {
+    if (stack[i] == '0') break;
+    container = container[stack[i]];
+  }
+  for (m in container) {
+    if (property == signature) continue;
+    
+    marker = container[m];
+    for (j = i+1; j < stack.length; j++) {
+      marker = marker[stack[j]];
+    }
+    markers.push(marker);
+  }
+}
+markers;
+
+function get_color(marker) {
+  for (property in marker) {
+    if (marker[property].indexOf && marker[property].indexOf('.png') > -1) {
+      candidate = marker[property];
+      if (candidate.match(/^http/)) {
+        color = candidate.match('/[^/.]*.png')[0];
+        color = color.substring(1, color.length - 4); // get the color name from the image
+        color = color.replace('-dot', '');
+        if (color == 'pink') color = '0xCE579A';
+        if (color == 'ltblue') color = '0x67DDDD';
+        return color;
+      }
+    }
+  }
+  return '';
+}
 
 
+size = '350x450';
 
+center = map.getCenter().toUrlValue();
+zoom = 3;
+url = 'http://maps.google.com/maps/api/staticmap?zoom=' + zoom + '&size=' + size + '&center=' + center + '&maptype=roadmap&sensor=false';
 
+for (i=0; i < markers.length; i++) {
+  marker = markers[i];
+  try {
+    latLng = marker['latlng'];
+    color = get_color(marker);
+
+    url += '&markers=color:' + color + '|' + latLng.lat.toFixed(2) + ',' + latLng.lng.toFixed(2);
+  }catch(err){}
+}
+window.open(url, '_blank');
