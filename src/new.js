@@ -7,38 +7,31 @@ function has_property(container, property) {
 }
 
 function is_marker(container) {
-  return has_property(container, 'infoWindow');
+  return has_property(container, 'infoWindow') && has_property(container, 'latlng');
 }
 
-map = window['gApplication'].getMap();
-signature = 'dira-was-here';
-max_level = 4;
-
 function explore(container, history) {
-  if (is_marker(container)) {
+  if (is_marker(container) && history.toString().indexOf(',0') > -1) {
     throw(history);
   }
-  level = history.length;
-  if (level > max_level) return;
-
-  try { 
-    container[signature] = 1;
-  }catch(e) { return; }
+  if (history.length > max_level) return;
 
   for (property in container) {
-    if (property == signature) continue;
     if (!is_object(container[property])) continue;
-    if (has_property(container[property], signature)) continue;
+    if (has_property(container, 'parentNode')) continue;
 
     explore(container[property], history.concat([property]));
   }
 }
 
+map = window['gApplication'].getMap();
+max_level = 3;
 markers = [];
+
 try {
   explore(map, []);
 } catch(stack) {
-  // stack has the form property property 0 property property
+  // stack has the form: [property, property, "0", property, property]
   // before the index is the markers' container, after the index the properties to access inside the marker
   container = map;
   for (i = 0; i < stack.length; i++) {
@@ -46,8 +39,6 @@ try {
     container = container[stack[i]];
   }
   for (m in container) {
-    if (property == signature) continue;
-    
     marker = container[m];
     for (j = i+1; j < stack.length; j++) {
       marker = marker[stack[j]];
@@ -55,7 +46,6 @@ try {
     markers.push(marker);
   }
 }
-markers;
 
 function get_color(marker) {
   for (property in marker) {
@@ -92,4 +82,3 @@ for (i=0; i < markers.length; i++) {
   }catch(err){}
 }
 window.open(url, '_blank');
-
