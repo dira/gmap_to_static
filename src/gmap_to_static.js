@@ -15,9 +15,13 @@ function is_marker(container) {
   return has_property(container, 'infoWindow') && has_property(container, 'latlng');
 }
 
+function is_path(container) {
+  return has_property(container, "getVertex");
+}
+
 // Recursively explore the entire object space, looking for markers
 function explore(container, history) {
-  if (is_marker(container) && history.toString().indexOf(',0') > -1) { // the marker should be in an array
+  if (find(container) && history.toString().indexOf(',0') > -1) { // the marker should be in an array
     throw(history);
   }
   if (history.length < max_level) {
@@ -58,12 +62,16 @@ function get_zoom() {
 }
 
 map = window.gApplication.getMap();
-max_level = 3;
 markers = [];
+paths = [];
 
+console.log('here');
 try {
+  max_level = 3;
+  find = is_marker;
   explore(map, []);
 } catch(stack) {
+console.log('found markers: ', stack);
   // yuppie, found markers
   // stack has the form: [property, property, "0", property, property]
   container = map;
@@ -79,16 +87,48 @@ try {
     markers.push(marker);
   }
 }
+console.log("markers", markers);
+try {
+  max_level = 4;
+  find = is_path;
+  explore(map, []);
+} catch(stack) {
+console.log('found paths: ', stack);
+  // yuppie, found path
+  // stack has the form: [property, property, "0", property, property]
+  container = map;
+  for (var i = 0; i < stack.length; i++) {
+    if (stack[i] == '0') break;
+    container = container[stack[i]];
+  }
+  for (var m in container) {
+    var marker = container[m];
+    for (var j = i+1; j < stack.length; j++) {
+      marker = marker[stack[j]];
+    }
+    paths.push(marker);
+  }
+}
+console.log('paths', paths);
 
 size = '350x450';
 // todo: maptype {roadmap,sattelite,hybrid,terrain}
 url = 'http://maps.google.com/maps/api/staticmap?zoom=' + get_zoom() + '&size=' + size + '&center=' + map.getCenter().toUrlValue() + '&maptype=roadmap&sensor=false';
-
-for (var i = 0; i < markers.length; i++) {
-  var marker = markers[i];
-  try {
-    var latLng = marker['latlng'];
-    url += '&markers=color:' + get_color(marker) + '|' + latLng.lat.toFixed(2) + ',' + latLng.lng.toFixed(2);
-  }catch(err){}
-}
+url += '&';
+console.log('url', url);
+url += markers.map(function(marker) {
+  var latLng = marker['latlng'];
+  return 'markers=color:' + get_color(marker) + '|' + latLng.lat.toFixed(2) + ',' + latLng.lng.toFixed(2);
+}).join('&');
+url += '&'
+console.log('url2', url);
+url += paths.map(function(path){
+  points = []
+  for (var i  =0; i < path.getVertexCount(); i++) {
+    var v = path.getVertex(i);
+    points.push(v.lat().toFixed(2) + "," + v.lng().toFixed(2));
+  }
+  return 'path=' + points.join("|");
+}).join("&");
+console.log('url3', url);
 window.open(url, '_blank');
