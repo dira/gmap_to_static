@@ -1,3 +1,5 @@
+h2. This is:
+
 A bookmarklet that allows to get a static map out of a dynamic Google map, together with its markers, with just a click.
 
 Go to "http://dira.ro/code/gmap_to_static.html":http://dira.ro/code/gmap_to_static.html and drag the bookmarklet to your Bookmarklet Holder Thingie.
@@ -5,3 +7,10 @@ Go to "http://dira.ro/code/gmap_to_static.html":http://dira.ro/code/gmap_to_stat
 !http://img.skitch.com/20100415-c3be1mse6stb3krhtqya4erh88.jpg!
 
 PS: one-click static maps creation is addictive.
+
+
+h2. Technicalities
+
+Some of the map information is available (the center and the map's geographical bounds). The rest is inferred as follows:
+* the zoom is calculated with a magic formula depending of map's width, geographical bounds, and wisdom
+* the markers are found by recursively searching the map's properties until finding objects that quack like markers (hack-ish!)
