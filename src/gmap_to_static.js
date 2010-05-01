@@ -20,8 +20,8 @@ function is_path(container) {
 }
 
 // Recursively explore the entire object space, looking for markers
-function explore(container, history) {
-  if (find(container) && history.toString().indexOf(',0') > -1) { // the marker should be in an array
+function explore(container, found, max_level, history) {
+  if (found(container) && history.toString().indexOf(',0') > -1) { // the marker should be in an array
     throw(history);
   }
   if (history.length < max_level) {
@@ -29,9 +29,39 @@ function explore(container, history) {
       if (!is_object(container[property])) continue;
       if (has_property(container[property], 'parentNode')) continue; // don't look into DOM elements
 
-      explore(container[property], history.concat([property]));
+      explore(container[property], found, max_level, history.concat([property]));
     }
   }
+}
+
+function search_for(what, max_level) {
+  results = [];
+  try {
+    explore(map, what, max_level, []);
+  } catch(stack) {
+    // yuppie, found markers
+    // stack has the form: [property, property, "0", property, property]
+    container = map;
+    var pivot = 0;
+    var n = stack.length;
+    for (var i = n; i >= 0; i--) {
+      if (stack[i] == '0') {
+        pivot = i;
+        break;
+      }
+    }
+    for (var i = 0; i < pivot; i++) {
+      container = container[stack[i]];
+    }
+    for (var e in container) {
+      var element = container[e];
+      for (var i = pivot + 1; i < n; i++) {
+        element = element[stack[i]];
+      }
+      results.push(element);
+    }
+  }
+  return results;
 }
 
 function get_color(marker) {
@@ -65,70 +95,26 @@ map = window.gApplication.getMap();
 markers = [];
 paths = [];
 
-console.log('here');
-try {
-  max_level = 3;
-  find = is_marker;
-  explore(map, []);
-} catch(stack) {
-console.log('found markers: ', stack);
-  // yuppie, found markers
-  // stack has the form: [property, property, "0", property, property]
-  container = map;
-  for (var i = 0; i < stack.length; i++) {
-    if (stack[i] == '0') break;
-    container = container[stack[i]];
-  }
-  for (var m in container) {
-    var marker = container[m];
-    for (var j = i+1; j < stack.length; j++) {
-      marker = marker[stack[j]];
-    }
-    markers.push(marker);
-  }
-}
-console.log("markers", markers);
-try {
-  max_level = 4;
-  find = is_path;
-  explore(map, []);
-} catch(stack) {
-console.log('found paths: ', stack);
-  // yuppie, found path
-  // stack has the form: [property, property, "0", property, property]
-  container = map;
-  for (var i = 0; i < stack.length; i++) {
-    if (stack[i] == '0') break;
-    container = container[stack[i]];
-  }
-  for (var m in container) {
-    var marker = container[m];
-    for (var j = i+1; j < stack.length; j++) {
-      marker = marker[stack[j]];
-    }
-    paths.push(marker);
-  }
-}
-console.log('paths', paths);
+markers = search_for(is_marker, 3);
+paths = search_for(is_path, 4);
 
 size = '350x450';
 // todo: maptype {roadmap,sattelite,hybrid,terrain}
 url = 'http://maps.google.com/maps/api/staticmap?zoom=' + get_zoom() + '&size=' + size + '&center=' + map.getCenter().toUrlValue() + '&maptype=roadmap&sensor=false';
-url += '&';
-console.log('url', url);
-url += markers.map(function(marker) {
+
+url += '&' + markers.map(function(marker) {
   var latLng = marker['latlng'];
   return 'markers=color:' + get_color(marker) + '|' + latLng.lat.toFixed(2) + ',' + latLng.lng.toFixed(2);
 }).join('&');
-url += '&'
-console.log('url2', url);
-url += paths.map(function(path){
-  points = []
-  for (var i  =0; i < path.getVertexCount(); i++) {
+
+url += '&' + paths.map(function(path){
+  points = [];
+  for (var i = 0; i < path.getVertexCount(); i++) {
     var v = path.getVertex(i);
     points.push(v.lat().toFixed(2) + "," + v.lng().toFixed(2));
   }
   return 'path=' + points.join("|");
 }).join("&");
-console.log('url3', url);
+
+//console.log(url);
 window.open(url, '_blank');
