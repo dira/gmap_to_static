@@ -67,7 +67,7 @@ function get_color(marker) {
 size = '350x450';
 
 center = map.getCenter().toUrlValue();
-zoom = 3 + Math.round(Math.LOG2E * Math.log(0.125 * window.outerHeight / map.getBounds().toSpan().y));
+zoom = 3 + Math.round(Math.LOG2E * Math.log(0.175 * window.outerWidth / map.getBounds().toSpan().x));
 //roadmap,sattelite,hybrid,terrain
 
 url = 'http://maps.google.com/maps/api/staticmap?zoom=' + zoom + '&size=' + size + '&center=' + center + '&maptype=roadmap&sensor=false';
