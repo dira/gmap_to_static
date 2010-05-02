@@ -92,7 +92,7 @@ function get_zoom() {
      with powers of 2, hence the mighty log2()
      For level 3, 1/r = 0.175. I like level 3 because, for not extravagant resolutions, there is no map part shown twice,
      so longitude_span is actually meaningful */
-  var r = document.getElementById('map').offsetWidth / map.getBounds().toSpan().x;
+  var r = map_element.offsetWidth / map.getBounds().toSpan().x;
   return 3 + Math.round(Math.LOG2E * Math.log(0.175 * r));
 }
 
@@ -101,7 +101,13 @@ function get_url() {
   var markers = search_for(is_marker, 3);
   var paths = search_for(is_path, 4);
 
-  var size = [400,450];
+
+  var size = [Math.min(640, Math.round(map_element.offsetWidth  / 10) * 10),
+              Math.min(640, Math.round(map_element.offsetHeight / 10) * 10)];
+  try {
+    var new_size = prompt("Size", size.join('x')).split("x");
+    if (Number(new_size[0]) && Number(new_size[1])) size = [Number(new_size[0]), Number(new_size[1])];
+  }catch(e){}
   var zoom = get_zoom();
   // todo: alert size
   // todo: maptype {roadmap,sattelite,hybrid,terrain}
@@ -145,4 +151,5 @@ function get_url() {
 }
 
 map = window.gApplication.getMap();
+map_element = document.getElementById('map');
 window.open(get_url(), '_blank');
