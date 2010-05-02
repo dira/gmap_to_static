@@ -123,7 +123,7 @@ function get_url() {
   url += '&' + markers.map(function(marker) {
     var latLng = marker['latlng'];
     if (!between(top_left, bottom_right, latLng)) return null;
-    return 'markers=color:' + get_color(marker) + '|' + latLng.lat.toFixed(2) + ',' + latLng.lng.toFixed(2);
+    return 'markers=color:' + get_color(marker) + '|' + latLng.lat.toFixed(precision) + ',' + latLng.lng.toFixed(precision);
   }).filter(function(e){return e != null;}).join('&');
 
   url += '&' + paths.map(function(path){
@@ -141,15 +141,17 @@ function get_url() {
     for (var i = 0; i < n; i++) {
       if (to_add.indexOf(i) == -1) continue;
       var v = path.getVertex(i);
-      points.push(v.lat().toFixed(2) + "," + v.lng().toFixed(2));
+      points.push(v.lat().toFixed(precision) + "," + v.lng().toFixed(precision));
     }
     if (points.length < 2) return null;
     var color = path.color == '#0000ff' ? '' : ('color:' + path.color.replace('#', '0x') + '|');
     return 'path=' + color + points.join("|");
   }).filter(function(e){return e != null;}).join("&");
+  //console.log(url);
   return url;
 }
 
 map = window.gApplication.getMap();
 map_element = document.getElementById('map');
+precision = 3;
 window.open(get_url(), '_blank');
