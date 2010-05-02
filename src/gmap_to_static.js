@@ -39,13 +39,13 @@ function explore(container, found, max_level, history) {
 }
 
 function search_for(what, max_level) {
-  results = [];
+  var results = [];
   try {
     explore(map, what, max_level, []);
   } catch(stack) {
     // yuppie, found markers
     // stack has the form: [property, property, "0", property, property]
-    container = map;
+    var container = map;
     var pivot = 0;
     var n = stack.length;
     for (var i = n; i >= 0; i--) {
@@ -62,7 +62,7 @@ function search_for(what, max_level) {
       for (var i = pivot + 1; i < n; i++) {
         element = element[stack[i]];
       }
-      results.push(element);
+      if (element) results.push(element);
     }
   }
   return results;
