@@ -16,7 +16,11 @@ function is_marker(container) {
 }
 
 function is_path(container) {
-  return has_property(container, "getVertex");
+  return has_property(container, "getVertex") && has_property(container, 'name');
+}
+
+function is_shape(container) {
+  return has_property(container, "getVertex") && !has_property(container, 'name');
 }
 
 // Recursively explore the entire object space, looking for markers
@@ -100,7 +104,8 @@ function get_zoom() {
 function get_url() {
   var markers = search_for(is_marker, 3);
   var paths = search_for(is_path, 4);
-
+  var shapes = search_for(is_shape, 4);
+  paths = paths.concat(shapes); // no shape rendering in static maps, for the moment
 
   var size = [Math.min(640, Math.round(map_element.offsetWidth  / 10) * 10),
               Math.min(640, Math.round(map_element.offsetHeight / 10) * 10)];
