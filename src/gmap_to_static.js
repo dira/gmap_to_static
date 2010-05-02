@@ -38,6 +38,22 @@ function explore(container, found, max_level, history) {
   }
 }
 
+function down(containers, property) {
+  var result = [];
+  for (var c in containers) {
+    if (Number(property) == property) {
+      for (var elem in containers[c]) {
+        result.push(containers[c][elem]);
+      }
+    } else {
+      try {
+        result.push(containers[c][property]);
+      } catch(e){}
+    }
+  }
+  return result.filter(function(e){return e != null;});
+}
+
 function search_for(what, max_level) {
   var results = [];
   try {
@@ -45,24 +61,10 @@ function search_for(what, max_level) {
   } catch(stack) {
     // yuppie, found markers
     // stack has the form: [property, property, "0", property, property]
-    var container = map;
-    var pivot = 0;
+    var results = [map];
     var n = stack.length;
-    for (var i = n; i >= 0; i--) {
-      if (stack[i] == '0') {
-        pivot = i;
-        break;
-      }
-    }
-    for (var i = 0; i < pivot; i++) {
-      container = container[stack[i]];
-    }
-    for (var e in container) {
-      var element = container[e];
-      for (var i = pivot + 1; i < n; i++) {
-        element = element[stack[i]];
-      }
-      if (element) results.push(element);
+    for (var i = 0; i < n; i++) {
+      results = down(results, stack[i]);
     }
   }
   return results;
