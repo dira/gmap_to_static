@@ -81,6 +81,11 @@ function get_color(marker) {
   return '';
 }
 
+function between(top_left, bottom_right, point) {
+  return point.lat <= top_left.lat() && point.lng >= top_left.lng() &&
+    point.lat >= bottom_right.lat() && point.lng <= bottom_right.lng();
+}
+
 function get_zoom() {
   /* Hic sunt magiks! :D
      r (map_width/longitude_span) is constant within a zoom level and diminuates exponentially as we zoom in,
@@ -91,30 +96,53 @@ function get_zoom() {
   return 3 + Math.round(Math.LOG2E * Math.log(0.175 * r));
 }
 
+
+function get_url() {
+  var markers = search_for(is_marker, 3);
+  var paths = search_for(is_path, 4);
+
+  var size = [400,450];
+  var zoom = get_zoom();
+  // todo: alert size
+  // todo: maptype {roadmap,sattelite,hybrid,terrain}
+  var url = 'http://maps.google.com/maps/api/staticmap?zoom=' + zoom + '&size=' + size.join('x') + '&center=' + map.getCenter().toUrlValue() + '&maptype=roadmap&sensor=false';
+
+  var top_left = map.fromLatLngToDivPixel(map.getCenter());
+  top_left.x -= Math.round(size[0] / 2); top_left.y -= Math.round(size[1] / 2);
+  top_left = map.fromDivPixelToLatLng(top_left);
+  var bottom_right = map.fromLatLngToDivPixel(map.getCenter());
+  bottom_right.x += Math.round(size[0] / 2); bottom_right.y += Math.round(size[1] / 2);
+  bottom_right = map.fromDivPixelToLatLng(bottom_right);
+
+  url += '&' + markers.map(function(marker) {
+    var latLng = marker['latlng'];
+    if (!between(top_left, bottom_right, latLng)) return null;
+    return 'markers=color:' + get_color(marker) + '|' + latLng.lat.toFixed(2) + ',' + latLng.lng.toFixed(2);
+  }).filter(function(e){return e != null;}).join('&');
+
+  url += '&' + paths.map(function(path){
+    var points = [];
+    var n = path.getVertexCount();
+    // for each node that is in the map area, add the predecesor and the succesor
+    // will not work for a segment that crosses the map but has ends outside the map area. good enough
+    var to_add = [];
+    for (var i = 0; i < n; i++) {
+      var v = path.getVertex(i);
+      if (between(top_left, bottom_right, {lat: v.lat(), lng: v.lng()})) {
+        to_add.push(i, i+1, i-1);
+      }
+    }
+    for (var i = 0; i < n; i++) {
+      if (to_add.indexOf(i) == -1) continue;
+      var v = path.getVertex(i);
+      points.push(v.lat().toFixed(2) + "," + v.lng().toFixed(2));
+    }
+    if (points.length < 2) return null;
+    var color = path.color == '#0000ff' ? '' : ('color:' + path.color.replace('#', '0x') + '|');
+    return 'path=' + color + points.join("|");
+  }).filter(function(e){return e != null;}).join("&");
+  return url;
+}
+
 map = window.gApplication.getMap();
-markers = [];
-paths = [];
-
-markers = search_for(is_marker, 3);
-paths = search_for(is_path, 4);
-
-size = '350x450';
-// todo: maptype {roadmap,sattelite,hybrid,terrain}
-url = 'http://maps.google.com/maps/api/staticmap?zoom=' + get_zoom() + '&size=' + size + '&center=' + map.getCenter().toUrlValue() + '&maptype=roadmap&sensor=false';
-
-url += '&' + markers.map(function(marker) {
-  var latLng = marker['latlng'];
-  return 'markers=color:' + get_color(marker) + '|' + latLng.lat.toFixed(2) + ',' + latLng.lng.toFixed(2);
-}).join('&');
-
-url += '&' + paths.map(function(path){
-  points = [];
-  for (var i = 0; i < path.getVertexCount(); i++) {
-    var v = path.getVertex(i);
-    points.push(v.lat().toFixed(2) + "," + v.lng().toFixed(2));
-  }
-  return 'path=' + points.join("|");
-}).join("&");
-
-//console.log(url);
-window.open(url, '_blank');
+window.open(get_url(), '_blank');
