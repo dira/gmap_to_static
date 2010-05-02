@@ -1,7 +1,7 @@
 // Hypothesis:
 // - in the DOM, the map is in #map
-// - the markers have the properties "infoWindow" and "latlng", and they are 
-// no more than 3 levels deep compared to window.gApplication.getMap()
+// - markers, paths and shapes can be identified by their "quack"
+// - arrays have goodie functions: map, filter
 
 function is_object(elem) {
   return (elem != null) && (typeof(elem) == 'object');
@@ -42,9 +42,7 @@ function down(containers, property) {
   var result = [];
   for (var c in containers) {
     if (Number(property) == property) {
-      for (var elem in containers[c]) {
-        result.push(containers[c][elem]);
-      }
+      result = result.concat(containers[c]); // push the entire array
     } else {
       try {
         result.push(containers[c][property]);
@@ -88,8 +86,8 @@ function get_color(marker) {
 }
 
 function between(top_left, bottom_right, point) {
-  return point.lat <= top_left.lat() && point.lng >= top_left.lng() &&
-    point.lat >= bottom_right.lat() && point.lng <= bottom_right.lng();
+  return  point.lat <= top_left.lat() &&      point.lng >= top_left.lng() &&
+          point.lat >= bottom_right.lat() &&  point.lng <= bottom_right.lng();
 }
 
 function get_zoom() {
