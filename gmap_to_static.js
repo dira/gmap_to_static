@@ -162,4 +162,7 @@ function get_url() {
 map = window.gApplication.getMap();
 map_element = document.getElementById('map');
 precision = 3;
-window.open(get_url());
+url = get_url();
+
+var opened = window.open(url);
+if (opened == null) prompt("The address of the static map is:", url);
