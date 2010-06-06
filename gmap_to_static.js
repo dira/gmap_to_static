@@ -26,7 +26,7 @@ function is_shape(container) {
 // Recursively explore the entire object space, looking for markers
 function explore(container, found, max_level, history) {
   if (found(container) && history.toString().indexOf(',0') > -1) { // the marker should be in an array
-    throw(history);
+    throw({ type: 'GMap-to-static', history: history });
   }
   if (history.length < max_level) {
     for (var property in container) {
@@ -56,13 +56,16 @@ function search_for(what, max_level) {
   var results = [];
   try {
     explore(map, what, max_level, []);
-  } catch(stack) {
-    // yuppie, found markers
-    // stack has the form: [property, property, "0", property, property]
-    var results = [map];
-    var n = stack.length;
-    for (var i = 0; i < n; i++) {
-      results = down(results, stack[i]);
+  } catch(e) {
+    if (e.type && e.type == 'GMap-to-static') {
+      var stack = e.history;
+      // yuppie, found markers
+      // stack has the form: [property, property, "0", property, property]
+      var results = [map];
+      var n = stack.length;
+      for (var i = 0; i < n; i++) {
+        results = down(results, stack[i]);
+      }
     }
   }
   return results;
@@ -159,4 +162,4 @@ function get_url() {
 map = window.gApplication.getMap();
 map_element = document.getElementById('map');
 precision = 3;
-window.open(get_url(), '_blank');
+window.open(get_url());
