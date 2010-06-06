@@ -1,0 +1,17 @@
+HONOR
+* add a namespace
+* unify naming: stack/history
+* bug paths: map = foz de iguasu
+
+DOCS
+* github and new blog post: link to the page on dira.ro
+* set the new post as homepage on github
+
+USABILITY
+* don't round to 10, don't alert size
+
+IMPROVEMENTS
+* adjust latlng precision to fill the 2048 limit: 5 to 1 do get_url
+* marker colors
+  * marker_greenA (label: A)
+  * test: all colors from map edit, with and without dot
