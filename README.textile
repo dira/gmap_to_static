@@ -2,7 +2,7 @@ h2. This is:
 
 A bookmarklet that allows to get a static map out of a dynamic Google map, with just a click.
 
-Go to "http://dira.ro/code/gmap_to_static.html":http://dira.ro/code/gmap_to_static.html and drag the bookmarklet to your Bookmarklet Holder Thingie.
+Go to "dira.ro/code/GMap-to-static":http://dira.ro/code/GMap-to-static/ and drag the bookmarklet to your Bookmarklet Holder Thingie.
 
 It does markers:
 !http://img.skitch.com/20100415-c3be1mse6stb3krhtqya4erh88.jpg!
