@@ -28,11 +28,14 @@
     return has_property(container, 'color') && has_property(container, 'fill');
   }
 
-  // Recursively explore the entire object space, looking for markers
-  function explore(container, found, max_level, path) {
-    if (found(container)) {
-      if ((found == is_shape_bgrd) ||
-          (found != is_shape_bgrd && path.toString().indexOf(',0') > -1)) { // markers, paths and shapes - in array
+  function result_must_be_array(quack) {
+    return quack != is_shape_bgrd;
+  }
+
+  // Recursively explore the entire object space, until finding the needed object
+  function search_by_quack(container, quack, max_level, path) {
+    if (quack(container)) {
+      if ( !result_must_be_array(quack) || path.toString().indexOf(',0') > -1) {
         throw({ type: 'GMap-to-static', path: path });
       }
     }
@@ -41,7 +44,7 @@
         if (!is_object(container[property])) continue;
         if (has_property(container[property], 'parentNode')) continue; // don't look into DOM elements
 
-        explore(container[property], found, max_level, path.concat([property]));
+        search_by_quack(container[property], quack, max_level, path.concat([property]));
       }
     }
   }
@@ -60,10 +63,10 @@
     return result.filter(function(e){return e != null;});
   }
 
-  function search_for(what, max_level) {
+  function search_for(quack, max_level) {
     var results = [];
     try {
-      explore(map, what, max_level, []);
+      search_by_quack(map, quack, max_level, []);
     } catch(e) {
       if (e.type && e.type == 'GMap-to-static') {
         var results = [map];
@@ -139,7 +142,7 @@
     var color = path.color == '#0000ff' ? '' : ('color:' + encode_hex(path.color) + '|');
     if (is_shape) {
       try {
-        explore(path, is_shape_bgrd, 3, []);
+        search_by_quack(path, is_shape_bgrd, 3, []);
       } catch(e) {
         var fill = path;
         for (var i in e.path) fill = fill[e.path[i]]; // TODO why not down
