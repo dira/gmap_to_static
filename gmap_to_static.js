@@ -25,16 +25,16 @@
   }
 
   // Recursively explore the entire object space, looking for markers
-  function explore(container, found, max_level, history) {
-    if (found(container) && history.toString().indexOf(',0') > -1) { // the marker should be in an array
-      throw({ type: 'GMap-to-static', history: history });
+  function explore(container, found, max_level, path) {
+    if (found(container) && path.toString().indexOf(',0') > -1) { // the marker should be in an array
+      throw({ type: 'GMap-to-static', path: path });
     }
-    if (history.length < max_level) {
+    if (path.length < max_level) {
       for (var property in container) {
         if (!is_object(container[property])) continue;
         if (has_property(container[property], 'parentNode')) continue; // don't look into DOM elements
 
-        explore(container[property], found, max_level, history.concat([property]));
+        explore(container[property], found, max_level, path.concat([property]));
       }
     }
   }
@@ -59,13 +59,9 @@
       explore(map, what, max_level, []);
     } catch(e) {
       if (e.type && e.type == 'GMap-to-static') {
-        var stack = e.history;
-        // yuppie, found markers
-        // stack has the form: [property, property, "0", property, property]
         var results = [map];
-        var n = stack.length;
-        for (var i = 0; i < n; i++) {
-          results = down(results, stack[i]);
+        for (var i = 0; i < e.path.length; i++) {
+          results = down(results, e.path[i]);
         }
       }
     }
@@ -156,7 +152,6 @@
       var color = path.color == '#0000ff' ? '' : ('color:' + path.color.replace('#', '0x') + '|');
       return 'path=' + color + points.join("|");
     }).filter(function(e){return e != null;}).join("&");
-    //console.log(url);
     return url;
   }
 
