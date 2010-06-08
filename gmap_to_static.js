@@ -4,6 +4,9 @@
   // - markers, paths and shapes can be identified by their "quack"
   // - arrays have goodie functions: map, filter
 
+  //
+  // Exploration
+  //
   function is_object(elem) {
     return (elem != null) && (typeof(elem) == 'object');
   }
@@ -78,33 +81,37 @@
     return results;
   }
 
-  function get_color(marker) {
-    for (var property in marker) {
-      if (marker[property].indexOf && marker[property].indexOf('.png') > -1) {
-        var color = marker[property];
-        if (color.match(/^http/)) {
-          color = color.match('/[^/.]*.png')[0];
-          color = color.substring(1, color.length - 4); // get the color name from the image
-          color = color.replace('-dot', '');
-          color = color.replace('marker_', '');
-          var has_label = color.match(/(.*)([0-9A-Z])/);
-          if (has_label != null) {
-            return 'color:' + has_label[1] + '|label:' + has_label[2];
-          } else {
-            if (color == 'pink') color = '0xce579a';
-            if (color == 'ltblue' || color == 'lightblue') color = '0x67dddd';
-            if (color == 'green') color = '0x00e64d';
-            return 'color:' + color;
-          }
-        }
-      }
-    }
-    return '';
-  }
+  //
+  // Data extraction
+  //
+  function extract_info() {
+    var markers = search_for(is_marker, 3);
+    var paths = search_for(is_path, 4);
+    var shapes = search_for(is_shape, 4);
 
-  function between(top_left, bottom_right, point) {
-    return  point.lat <= top_left.lat() &&      point.lng >= top_left.lng() &&
-            point.lat >= bottom_right.lat() &&  point.lng <= bottom_right.lng();
+    var size = [Math.min(640, Math.round(map_element.offsetWidth)),
+                Math.min(640, Math.round(map_element.offsetHeight))];
+    var zoom = get_zoom();
+              '&zoom=' + zoom + '&size=' + size.join('x') +
+              '&center=' + map.getCenter().toUrlValue() + '&sensor=false';
+
+    var bounds = get_actual_bounds(size);
+    markers = markers.filter(function(marker){ return between(bounds, marker['latlng']); }).map(extract_marker);
+
+    paths = paths.map(function(path){ return extract_path(path, bounds, false); }).
+      filter(function(e){return e != null;});
+
+    shapes = shapes.map(function(path){ return extract_path(path, bounds, true); }).
+      filter(function(e){return e != null;});
+
+
+    return {
+      size: size,
+      zoom: zoom,
+      markers: markers,
+      paths: paths,
+      shapes: shapes
+    };
   }
 
   function get_zoom() {
@@ -117,11 +124,23 @@
     return 3 + Math.round(Math.LOG2E * Math.log(0.175 * r));
   }
 
-  function encode_hex(hex) {
-    return hex.replace('#', '0x');
+  function get_actual_bounds(size) {
+    var top_left = map.fromLatLngToDivPixel(map.getCenter());
+    top_left.x -= Math.round(size[0] / 2); top_left.y -= Math.round(size[1] / 2);
+    top_left = map.fromDivPixelToLatLng(top_left);
+    var bottom_right = map.fromLatLngToDivPixel(map.getCenter());
+    bottom_right.x += Math.round(size[0] / 2); bottom_right.y += Math.round(size[1] / 2);
+    bottom_right = map.fromDivPixelToLatLng(bottom_right);
+    return { nw: top_left, se: bottom_right };
   }
 
-  function encode_path(path, top_left, bottom_right, is_shape) {
+  function extract_marker(marker) {
+    var info = get_color(marker);
+    info.latlng = marker['latlng'];
+    return info;
+  }
+
+  function extract_path(path, bounds, is_shape) {
     var points = [];
     var n = path.getVertexCount();
     // for each node that is in the map area, add the predecesor and the succesor
@@ -129,69 +148,113 @@
     var to_add = [];
     for (var i = 0; i < n; i++) {
       var v = path.getVertex(i);
-      if (between(top_left, bottom_right, {lat: v.lat(), lng: v.lng()})) {
+      if (between(bounds, {lat: v.lat(), lng: v.lng()})) {
         to_add.push(i, i+1, i-1);
       }
     }
     for (var i = 0; i < n; i++) {
       if (to_add.indexOf(i) == -1) continue;
       var v = path.getVertex(i);
-      points.push(v.lat().toFixed(precision) + "," + v.lng().toFixed(precision));
+      points.push({ lat: v.lat(), lng: v.lng() });
     }
     if (points.length < 2) return null;
-    var color = path.color == '#0000ff' ? '' : ('color:' + encode_hex(path.color) + '|');
+    var info = { color: encode_hex(path.color) };
     if (is_shape) {
       try {
         search_by_quack(path, is_shape_bgrd, 3, []);
       } catch(e) {
         var fill = path;
         for (var i in e.path) fill = fill[e.path[i]]; // TODO why not down
-        color += 'fillcolor:' + encode_hex(fill.fill) + Math.round(fill.opacity * 255).toString(16) + '|';
+        info.fillcolor = encode_hex(fill.fill) + Math.round(fill.opacity * 255).toString(16);
       }
     }
-    return 'path=' + color + points.join("|");
+    info.points = points;
+    return info;
   }
 
-  function get_url() {
-    var markers = search_for(is_marker, 3);
-    var paths = search_for(is_path, 4);
-    var shapes = search_for(is_shape, 4);
+  function get_color(marker) {
+    for (var property in marker) {
+      if (marker[property].indexOf && marker[property].indexOf('.png') > -1) {
+        var color = marker[property];
+        if (color.match(/^http/)) {
+          color = color.match('/[^/.]*.png')[0];
+          color = color.substring(1, color.length - 4); // get the color name from the image
+          color = color.replace('-dot', '');
+          color = color.replace('marker_', '');
+          var has_label = color.match(/(.*)([0-9A-Z])/);
+          if (has_label != null) {
+            return {color: has_label[1], label: + has_label[2] };
+          } else {
+            if (color == 'pink') color = '0xce579a';
+            if (color == 'ltblue' || color == 'lightblue') color = '0x67dddd';
+            if (color == 'green') color = '0x00e64d';
+            return { color: color };
+          }
+        }
+      }
+    }
+    return '';
+  }
 
-    var size = [Math.min(640, Math.round(map_element.offsetWidth)),
-                Math.min(640, Math.round(map_element.offsetHeight))];
-    var zoom = get_zoom();
+  function between(bounds, point) {
+    return  point.lat <= bounds.nw.lat() && point.lng >= bounds.nw.lng() &&
+            point.lat >= bounds.se.lat() && point.lng <= bounds.se.lng();
+  }
+
+  function encode_hex(hex) {
+    return hex.replace('#', '0x');
+  }
+
+  //
+  // URL construction
+  //
+  function get_url(info) {
     var url = 'http://maps.google.com/maps/api/staticmap?maptype=roadmap' +
-              '&zoom=' + zoom + '&size=' + size.join('x') +
+              '&zoom=' + info.zoom + '&size=' + info.size.join('x') +
               '&center=' + map.getCenter().toUrlValue() + '&sensor=false';
 
-    var top_left = map.fromLatLngToDivPixel(map.getCenter());
-    top_left.x -= Math.round(size[0] / 2); top_left.y -= Math.round(size[1] / 2);
-    top_left = map.fromDivPixelToLatLng(top_left);
-    var bottom_right = map.fromLatLngToDivPixel(map.getCenter());
-    bottom_right.x += Math.round(size[0] / 2); bottom_right.y += Math.round(size[1] / 2);
-    bottom_right = map.fromDivPixelToLatLng(bottom_right);
+    if (info.markers.length > 0) {
+      url += '&' + info.markers.map(function(marker) {
+        return 'markers=color:' + marker.color + '|' + encode_latlng(marker.latlng);
+      }).join('&');
+    }
 
-    url += '&' + markers.map(function(marker) {
-      var latLng = marker['latlng'];
-      if (!between(top_left, bottom_right, latLng)) return null;
-      return 'markers=' + get_color(marker) + '|' + latLng.lat.toFixed(precision) + ',' + latLng.lng.toFixed(precision);
-    }).filter(function(e){return e != null;}).join('&');
+    if (info.shapes.length > 0) {
+      url += '&' + info.shapes.map(function(shape){
+        return encode_path(shape, true);
+      }).join("&");
+    }
 
-    url += '&' + shapes.map(function(path){
-      return encode_path(path, top_left, bottom_right, true);
-    }).filter(function(e){return e != null;}).join("&");
-
-    url += '&' + paths.map(function(path){
-      return encode_path(path, top_left, bottom_right, false);
-    }).filter(function(e){return e != null;}).join("&");
+    if (info.paths.length > 0) {
+      url += '&' + info.paths.map(function(path){
+        return encode_path(path, false);
+      }).join("&");
+    }
 
     return url;
   }
 
+  function encode_path(path, is_shape) {
+    url = 'path=';
+    if (is_shape) {
+      url += 'fillcolor:' + path.fillcolor + '|';
+    }
+    url += 'color:' + path.color + '|';
+    return url + path.points.map(encode_latlng).join("|");
+  }
+
+  function encode_latlng(latlng) {
+    return latlng.lat.toFixed(precision) + ',' + latlng.lng.toFixed(precision);
+  }
+
+  //
+  // Let's roll!
+  //
   var map = window.gApplication.getMap();
   var map_element = document.getElementById('map');
   var precision = 3;
-  var url = get_url();
+  var info = extract_info();
+  var url = get_url(info);
 
   var opened = window.open(url);
   if (opened == null) prompt("The address of the static map is:", url);
