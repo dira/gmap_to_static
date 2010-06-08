@@ -107,16 +107,12 @@
     var shapes = search_for(is_shape, 4);
     paths = paths.concat(shapes); // no shape rendering in static maps, for the moment
 
-    var size = [Math.min(640, Math.round(map_element.offsetWidth  / 10) * 10),
-                Math.min(640, Math.round(map_element.offsetHeight / 10) * 10)];
-    try {
-      var new_size = prompt("Size", size.join('x')).split("x");
-      if (Number(new_size[0]) && Number(new_size[1])) size = [Number(new_size[0]), Number(new_size[1])];
-    }catch(e){}
+    var size = [Math.min(640, Math.round(map_element.offsetWidth)),
+                Math.min(640, Math.round(map_element.offsetHeight))];
     var zoom = get_zoom();
-    // todo: alert size
-    // todo: maptype {roadmap,sattelite,hybrid,terrain}
-    var url = 'http://maps.google.com/maps/api/staticmap?maptype=roadmap&zoom=' + zoom + '&size=' + size.join('x') + '&center=' + map.getCenter().toUrlValue() + '&sensor=false';
+    var url = 'http://maps.google.com/maps/api/staticmap?maptype=roadmap' +
+              '&zoom=' + zoom + '&size=' + size.join('x') +
+              '&center=' + map.getCenter().toUrlValue() + '&sensor=false';
 
     var top_left = map.fromLatLngToDivPixel(map.getCenter());
     top_left.x -= Math.round(size[0] / 2); top_left.y -= Math.round(size[1] / 2);
