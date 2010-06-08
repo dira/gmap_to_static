@@ -76,9 +76,15 @@
           color = color.match('/[^/.]*.png')[0];
           color = color.substring(1, color.length - 4); // get the color name from the image
           color = color.replace('-dot', '');
+          color = color.replace('marker_', '');
           if (color == 'pink') color = '0xCE579A';
           if (color == 'ltblue') color = '0x67DDDD';
-          return color;
+          var has_label = color.match(/(.*)([0-9A-Z])/);
+          if (has_label != null) {
+            return 'color:' + has_label[1] + '|label:' + has_label[2];
+          } else {
+            return 'color:' + color;
+          }
         }
       }
     }
@@ -124,7 +130,7 @@
     url += '&' + markers.map(function(marker) {
       var latLng = marker['latlng'];
       if (!between(top_left, bottom_right, latLng)) return null;
-      return 'markers=color:' + get_color(marker) + '|' + latLng.lat.toFixed(precision) + ',' + latLng.lng.toFixed(precision);
+      return 'markers=' + get_color(marker) + '|' + latLng.lat.toFixed(precision) + ',' + latLng.lng.toFixed(precision);
     }).filter(function(e){return e != null;}).join('&');
 
     url += '&' + paths.map(function(path){
