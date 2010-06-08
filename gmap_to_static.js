@@ -77,12 +77,13 @@
           color = color.substring(1, color.length - 4); // get the color name from the image
           color = color.replace('-dot', '');
           color = color.replace('marker_', '');
-          if (color == 'pink') color = '0xCE579A';
-          if (color == 'ltblue') color = '0x67DDDD';
           var has_label = color.match(/(.*)([0-9A-Z])/);
           if (has_label != null) {
             return 'color:' + has_label[1] + '|label:' + has_label[2];
           } else {
+            if (color == 'pink') color = '0xce579a';
+            if (color == 'ltblue' || color == 'lightblue') color = '0x67dddd';
+            if (color == 'green') color = '0x00e64d';
             return 'color:' + color;
           }
         }
