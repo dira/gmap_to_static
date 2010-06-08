@@ -24,10 +24,17 @@
     return has_property(container, "getVertex") && !has_property(container, 'name');
   }
 
+  function is_shape_bgrd(container) {
+    return has_property(container, 'color') && has_property(container, 'fill');
+  }
+
   // Recursively explore the entire object space, looking for markers
   function explore(container, found, max_level, path) {
-    if (found(container) && path.toString().indexOf(',0') > -1) { // the marker should be in an array
-      throw({ type: 'GMap-to-static', path: path });
+    if (found(container)) {
+      if ((found == is_shape_bgrd) ||
+          (found != is_shape_bgrd && path.toString().indexOf(',0') > -1)) { // markers, paths and shapes - in array
+        throw({ type: 'GMap-to-static', path: path });
+      }
     }
     if (path.length < max_level) {
       for (var property in container) {
@@ -107,12 +114,45 @@
     return 3 + Math.round(Math.LOG2E * Math.log(0.175 * r));
   }
 
+  function encode_hex(hex) {
+    return hex.replace('#', '0x');
+  }
+
+  function encode_path(path, top_left, bottom_right, is_shape) {
+    var points = [];
+    var n = path.getVertexCount();
+    // for each node that is in the map area, add the predecesor and the succesor
+    // will not work for a segment that crosses the map but has ends outside the map area. good enough
+    var to_add = [];
+    for (var i = 0; i < n; i++) {
+      var v = path.getVertex(i);
+      if (between(top_left, bottom_right, {lat: v.lat(), lng: v.lng()})) {
+        to_add.push(i, i+1, i-1);
+      }
+    }
+    for (var i = 0; i < n; i++) {
+      if (to_add.indexOf(i) == -1) continue;
+      var v = path.getVertex(i);
+      points.push(v.lat().toFixed(precision) + "," + v.lng().toFixed(precision));
+    }
+    if (points.length < 2) return null;
+    var color = path.color == '#0000ff' ? '' : ('color:' + encode_hex(path.color) + '|');
+    if (is_shape) {
+      try {
+        explore(path, is_shape_bgrd, 3, []);
+      } catch(e) {
+        var fill = path;
+        for (var i in e.path) fill = fill[e.path[i]]; // TODO why not down
+        color += 'fillcolor:' + encode_hex(fill.fill) + Math.round(fill.opacity * 255).toString(16) + '|';
+      }
+    }
+    return 'path=' + color + points.join("|");
+  }
 
   function get_url() {
     var markers = search_for(is_marker, 3);
     var paths = search_for(is_path, 4);
     var shapes = search_for(is_shape, 4);
-    paths = paths.concat(shapes); // no shape rendering in static maps, for the moment
 
     var size = [Math.min(640, Math.round(map_element.offsetWidth)),
                 Math.min(640, Math.round(map_element.offsetHeight))];
@@ -134,27 +174,14 @@
       return 'markers=' + get_color(marker) + '|' + latLng.lat.toFixed(precision) + ',' + latLng.lng.toFixed(precision);
     }).filter(function(e){return e != null;}).join('&');
 
-    url += '&' + paths.map(function(path){
-      var points = [];
-      var n = path.getVertexCount();
-      // for each node that is in the map area, add the predecesor and the succesor
-      // will not work for a segment that crosses the map but has ends outside the map area. good enough
-      var to_add = [];
-      for (var i = 0; i < n; i++) {
-        var v = path.getVertex(i);
-        if (between(top_left, bottom_right, {lat: v.lat(), lng: v.lng()})) {
-          to_add.push(i, i+1, i-1);
-        }
-      }
-      for (var i = 0; i < n; i++) {
-        if (to_add.indexOf(i) == -1) continue;
-        var v = path.getVertex(i);
-        points.push(v.lat().toFixed(precision) + "," + v.lng().toFixed(precision));
-      }
-      if (points.length < 2) return null;
-      var color = path.color == '#0000ff' ? '' : ('color:' + path.color.replace('#', '0x') + '|');
-      return 'path=' + color + points.join("|");
+    url += '&' + shapes.map(function(path){
+      return encode_path(path, top_left, bottom_right, true);
     }).filter(function(e){return e != null;}).join("&");
+
+    url += '&' + paths.map(function(path){
+      return encode_path(path, top_left, bottom_right, false);
+    }).filter(function(e){return e != null;}).join("&");
+
     return url;
   }
 
