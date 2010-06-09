@@ -94,8 +94,6 @@ Dira = {1:1
     var size = [Math.min(640, Math.round(this.map_element.offsetWidth)),
                 Math.min(640, Math.round(this.map_element.offsetHeight))];
     var zoom = this.get_zoom();
-              '&zoom=' + zoom + '&size=' + size.join('x') +
-              '&center=' + this.map.getCenter().toUrlValue() + '&sensor=false';
 
     var bounds = this.get_actual_bounds(size);
 
