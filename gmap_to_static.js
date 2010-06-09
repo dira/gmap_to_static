@@ -108,7 +108,6 @@ Dira = {1:1
     shapes = shapes.map(function(path){ return _this.extract_path(path, bounds, true); }).
       filter(function(e){return e != null;});
 
-
     return {
       size: size,
       zoom: zoom,
@@ -162,14 +161,14 @@ Dira = {1:1
       points.push({ lat: v.lat(), lng: v.lng() });
     }
     if (points.length < 2) return null;
-    var info = { color: this.encode_hex(path.color) };
+    var info = { color: this.encode_hex(path.color), weight: path.weight, opacity: path.opacity };
     if (is_shape) {
       try {
         this.search_by_quack(path, this.is_shape_bgrd, 3, []);
       } catch(e) {
         var fill = path;
         for (var i in e.path) fill = fill[e.path[i]]; // TODO why not down
-        info.fillcolor = this.encode_hex(fill.fill) + Math.round(fill.opacity * 255).toString(16);
+        info.fillcolor = this.encode_hex(fill.fill) + this.encode_opacity(fill.opacity);
       }
     }
     info.points = points;
@@ -197,7 +196,7 @@ Dira = {1:1
         }
       }
     }
-    return {};
+    return { color: 'blue' };
   }
 
   ,between: function(bounds, point) {
@@ -207,6 +206,10 @@ Dira = {1:1
 
   ,encode_hex: function(hex) {
     return hex.replace('#', '0x');
+  }
+
+  ,encode_opacity: function(opacity) {
+    return Math.round(opacity * 255).toString(16);
   }
 
   //
@@ -259,7 +262,10 @@ Dira = {1:1
     if (is_shape) {
       url += 'fillcolor:' + path.fillcolor + '|';
     }
-    url += 'color:' + path.color + '|';
+    url += 'color:' + this.encode_hex(path.color) + this.encode_opacity(path.opacity) + '|';
+    if (path.weight != 5) {
+      url += 'weight:' + path.weight + '|';
+    }
     var _this = this;
     return url + path.points.map(function(point) { return _this.encode_latlng(point) }).join("|");
   }
