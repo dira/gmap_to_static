@@ -130,10 +130,11 @@ Dira = {1:1
   }
 
   ,get_actual_bounds: function(size) {
-    var top_left = this.map.fromLatLngToDivPixel(this.map.getCenter());
+    var center = this.map.getCenter();
+    var top_left = this.map.fromLatLngToDivPixel(center);
     top_left.x -= Math.round(size[0] / 2); top_left.y -= Math.round(size[1] / 2);
     top_left = this.map.fromDivPixelToLatLng(top_left);
-    var bottom_right = this.map.fromLatLngToDivPixel(this.map.getCenter());
+    var bottom_right = this.map.fromLatLngToDivPixel(center);
     bottom_right.x += Math.round(size[0] / 2); bottom_right.y += Math.round(size[1] / 2);
     bottom_right = this.map.fromDivPixelToLatLng(bottom_right);
     return { nw: top_left, se: bottom_right };
@@ -218,9 +219,10 @@ Dira = {1:1
   // URL construction
   //
   ,get_url: function(info) {
+    var center = this.map.getCenter();
     var url = 'http://maps.google.com/maps/api/staticmap?maptype=roadmap' +
               '&zoom=' + info.zoom + '&size=' + info.size.join('x') +
-              '&center=' + this.map.getCenter().toUrlValue() + '&sensor=false';
+              '&center=' + center.y.toFixed(3) + ',' + center.x.toFixed(3) + '&sensor=false';
 
     var _this = this;
     if (info.markers.length > 0) {
