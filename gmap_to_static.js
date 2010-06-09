@@ -294,11 +294,35 @@ Dira = {1:1
     return latlng.lat.toFixed(this.precision) + ',' + latlng.lng.toFixed(this.precision);
   }
 
+  //
+  // UI
+  //
+  ,showWarning: function() {
+    this.warning = document.createElement('div');
+    this.warning.innerHTML = 'Creating the static map URL, please wait a bit';
+    this.warning.style['position'] = 'absolute';
+    this.warning.style['left'] = '200px';
+    this.warning.style['top'] = '0';
+    this.warning.style['zIndex'] = '9999';
+    this.warning.style['padding'] = '20px 100px';
+    this.warning.style['backgroundColor'] = '#EEE';
+    this.warning.style['border'] = '2px solid #CCC';
+    this.warning.style['fontFamily'] = '"Helvetica 65 Medium",Helvetica,sans-serif';
+    this.warning.style['fontSize'] = '28px';
+    this.warning.style['color'] = 'rgb(170, 51, 17)';
+
+    document.body.appendChild(this.warning);
+  }
+
+  ,hideWarning: function() {
+    this.warning.parentNode.removeChild(this.warning);
+  }
 
   ,map : function() { return window.gApplication.getMap()}()
   ,map_element : document.getElementById('map')
 
   ,main: function() {
+    this.showWarning();
     var info = this.extract_info();
     var url;
     var max_precision = info.zoom > 13 ? 6 : info.zoom > 10 ? 4 : info.zoom > 5 ? 3 : info.zoom > 2 ? 2 : 1;
@@ -307,6 +331,7 @@ Dira = {1:1
       url = this.get_url(info);
       if (url.length <= 1904) break;
     }
+    this.hideWarning();
     var opened = window.open(url);
     if (opened == null) prompt("The address of the static map is:", url);
   }
