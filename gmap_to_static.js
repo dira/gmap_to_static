@@ -281,10 +281,16 @@ Dira = {1:1
 
   ,map : function() { return window.gApplication.getMap()}()
   ,map_element : document.getElementById('map')
-  ,precision : 3
 
   ,main: function() {
-    var url = this.get_url(this.extract_info());
+    var info = this.extract_info();
+    var url;
+    var max_precision = info.zoom > 13 ? 6 : info.zoom > 10 ? 4 : info.zoom > 5 ? 3 : info.zoom > 2 ? 2 : 1;
+    for (var p = max_precision; p >= 0; p--) {
+      this.precision = p;
+      url = this.get_url(info);
+      if (url.length <= 1904) break;
+    }
     var opened = window.open(url);
     if (opened == null) prompt("The address of the static map is:", url);
   }
