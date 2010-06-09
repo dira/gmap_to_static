@@ -271,7 +271,23 @@ Dira = {1:1
       url += 'weight:' + path.weight + '|';
     }
     var _this = this;
-    return url + path.points.map(function(point) { return _this.encode_latlng(point) }).join("|");
+    var points = path.points.map(function(point) { return _this.encode_latlng(point) });
+    // no reason to allow 2 neighbour points with the same coordinates
+    points = this.unify_equal_neighbours(points);
+    return url + points.join("|");
+  }
+
+  ,unify_equal_neighbours: function(values) {
+    var unified = [];
+    var last = null;
+    for (var i in values) {
+      var current = values[i];
+      if (current != last) {
+        last = current;
+        unified.push(current);
+      }
+    }
+    return unified;
   }
 
   ,encode_latlng: function(latlng) {
