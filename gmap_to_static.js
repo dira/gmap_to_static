@@ -8,7 +8,11 @@ Dira = {1:1
   // Exploration
   //
   ,is_object: function(elem) {
-    return (elem != null) && (typeof(elem) == 'object');
+    return this.not_null(elem) && (typeof(elem) == 'object');
+  }
+
+  ,not_null: function(elem) {
+    return elem != null;
   }
 
   ,has_property: function(container, property) {
@@ -63,7 +67,7 @@ Dira = {1:1
         } catch(e){}
       }
     }
-    return result.filter(function(e){return e != null;});
+    return result.filter(this.not_null);
   }
 
   ,search_for: function(quack, max_level) {
@@ -87,10 +91,6 @@ Dira = {1:1
   // Data extraction
   //
   ,extract_info: function() {
-    var markers = this.search_for(this.is_marker, 3);
-    var paths = this.search_for(this.is_path, 4);
-    var shapes = this.search_for(this.is_shape, 4);
-
     var size = [Math.min(640, Math.round(this.map_element.offsetWidth)),
                 Math.min(640, Math.round(this.map_element.offsetHeight))];
     var zoom = this.get_zoom();
@@ -98,22 +98,26 @@ Dira = {1:1
               '&center=' + this.map.getCenter().toUrlValue() + '&sensor=false';
 
     var bounds = this.get_actual_bounds(size);
+
     var _this = this;
+
+    var markers = this.search_for(this.is_marker, 3);
+    var paths = this.search_for(this.is_path, 4);
+    var shapes = this.search_for(this.is_shape, 4);
+
     markers = markers.filter(function(marker){ return _this.between(bounds, marker['latlng']); }).
       map(function(marker) { return _this.extract_marker(marker) } );
 
-    paths = paths.map(function(path){ return _this.extract_path(path, bounds, false); }).
-      filter(function(e){return e != null;});
+    paths  =  paths.map(function(path){ return _this.extract_path(path, bounds, false); });
 
-    shapes = shapes.map(function(path){ return _this.extract_path(path, bounds, true); }).
-      filter(function(e){return e != null;});
+    shapes = shapes.map(function(path){ return _this.extract_path(path, bounds, true);  });
 
     return {
       size: size,
       zoom: zoom,
       markers: markers,
-      paths: paths,
-      shapes: shapes
+      paths: paths.filter(this.not_null),
+      shapes: shapes.filter(this.not_null)
     };
   }
 
