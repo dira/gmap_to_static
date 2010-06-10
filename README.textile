@@ -8,7 +8,7 @@ It does markers:
 !http://img.skitch.com/20100415-c3be1mse6stb3krhtqya4erh88.jpg!
 
 And paths and shapes:
-!http://img.skitch.com/20100502-n3ruk73ft542ikc6c787hugmnc.jpg!
+!http://img.skitch.com/20100610-jdmwi4tggcibcm2rqmfm1pd3i1.jpg!
 
 PS: one-click static maps creation is addictive.
 
@@ -17,5 +17,4 @@ h2. Technicalities
 
 Some of the map information is available (the center and the map's geographical bounds). The rest is inferred as follows:
 * the zoom is calculated with a magic formula depending of map's width, geographical bounds, and wisdom
-* shapes are rendered as paths, as they are not yet supported by the static maps API
 * the markers, paths and shapes are found by recursively searching the map's properties until finding objects that quack like markers / paths / shapes (hack-ish!)
