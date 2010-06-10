@@ -81,7 +81,7 @@ Dira = {1:1
           results = this.down(results, e.path[i]);
         }
       } else {
-        throw(e);
+        // throw(e);
       }
     }
     return results;
