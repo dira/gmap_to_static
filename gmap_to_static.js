@@ -263,7 +263,7 @@ Dira = {1:1
 
   ,encode_path: function(path, is_shape) {
     url = 'path=';
-    if (is_shape) {
+    if (is_shape && path.fillcolor) {
       url += 'fillcolor:' + path.fillcolor + '|';
     }
     url += 'color:' + this.encode_hex(path.color) + this.encode_opacity(path.opacity) + '|';
