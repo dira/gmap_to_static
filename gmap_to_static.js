@@ -189,12 +189,12 @@ Dira = {1:1
           color = color.replace('marker_', '');
           var has_label = color.match(/(.*)([0-9A-Z])/);
           if (has_label != null) {
-            return {color: has_label[1], label: + has_label[2] };
+            return {color: has_label[1], label: has_label[2] };
           } else {
             if (color == 'pink') color = '0xce579a';
             if (color == 'ltblue' || color == 'lightblue') color = '0x67dddd';
             if (color == 'green') color = '0x00e64d';
-            return { color: color };
+            return { color: color, label: null };
           }
         }
       }
@@ -226,9 +226,14 @@ Dira = {1:1
 
     var _this = this;
     if (info.markers.length > 0) {
-      var by_color = this.group_by_color(info.markers);
-      for (var color in by_color) {
-        url += '&markers=color:' + color + '|' + by_color[color].map(function(marker) {
+      var by_look = this.group_by_look(info.markers);
+      for (var look in by_look) {
+        look = look.split(',');
+        url += '&markers=color:' + look[0];
+        if (look[1]) {
+          url += '|label:' + look[1];
+        }
+        url += '|' + by_look[look].map(function(marker) {
           return _this.encode_latlng(marker.latlng);
         }).join('|');
       }
@@ -249,14 +254,15 @@ Dira = {1:1
     return url;
   }
 
-  ,group_by_color: function(markers) {
+  ,group_by_look: function(markers) {
     var result = {};
     for (i in markers) {
       var marker = markers[i];
-      if (result[marker.color] == null) {
-        result[marker.color] = [];
+      var key = marker.color + ',' + (marker.label || '');
+      if (result[key] == null) {
+        result[key] = [];
       }
-      result[marker.color].push(marker);
+      result[key].push(marker);
     }
     return result;
   }
