@@ -19,4 +19,4 @@ Some of the map information is available (the center and the map's geographical 
 * the zoom is calculated with a magic formula depending of map's width, geographical bounds, and wisdom
 * the markers, paths and shapes are found by recursively searching the map's properties until finding objects that quack like markers / paths / shapes (hack-ish!)
 
-Full description: [http://dira.ro/2010/06/01/gmap_to_static-one-click-static-maps-creation](http://dira.ro/2010/06/01/gmap_to_static-one-click-static-maps-creation)
+Full description: "http://dira.ro/2010/06/01/gmap_to_static-one-click-static-maps-creation":http://dira.ro/2010/06/01/gmap_to_static-one-click-static-maps-creation
