@@ -1,3 +1,5 @@
+_This tool does not work anymore, as minification ruined its domain in early 2011. It was a great hack and so it shall be remembered._
+
 h2. This is:
 
 A bookmarklet that allows to get a static map out of a dynamic Google map, with just a click.
